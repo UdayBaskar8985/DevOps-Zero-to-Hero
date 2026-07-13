@@ -1,0 +1,100 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AuraFinance - Dashboard{% endblock %}</title>
+    <!-- Custom stylesheet -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <!-- Alert Container -->
+    <div class="alert-container" id="alert-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-item {{ message.tags }}">
+                    <span class="alert-icon">
+                        {% if message.tags == 'success' %}✨
+                        {% elif message.tags == 'error' %}⚠️
+                        {% elif message.tags == 'warning' %}🔔
+                        {% else %}ℹ️{% endif %}
+                    </span>
+                    <span class="alert-message">{{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Navigation Header -->
+    <header class="navbar">
+        <a href="{% url 'dashboard' %}" class="nav-brand">
+            <span>✨</span> AuraFinance
+        </a>
+        <div class="nav-profile">
+            {% if user.is_authenticated %}
+                <span class="user-tag">👤 {{ user.username }}</span>
+                <a href="{% url 'logout' %}" class="btn btn-secondary btn-sm">Sign Out</a>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn btn-secondary btn-sm">Sign In</a>
+                <a href="{% url 'signup' %}" class="btn btn-primary btn-sm">Create Account</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="app-container">
+        {% if user.is_authenticated %}
+            <!-- Left Sidebar Navigation -->
+            <aside class="sidebar">
+                <a href="{% url 'dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <span class="icon">📊</span> Dashboard
+                </a>
+                <a href="{% url 'expense_list' %}" class="sidebar-link {% if 'expense' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">💸</span> Expenses
+                </a>
+                <a href="{% url 'income_list' %}" class="sidebar-link {% if 'income' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">📈</span> Income Streams
+                </a>
+                <a href="{% url 'budget_list' %}" class="sidebar-link {% if 'budget' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">🎯</span> Monthly Budgets
+                </a>
+                <a href="{% url 'export_expenses_csv' %}" class="sidebar-link">
+                    <span class="icon">📥</span> Export CSV
+                </a>
+            </aside>
+        {% endif %}
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            {% block content %}
+            {% endblock %}
+        </main>
+    </div>
+
+    <!-- General alerts dismissal JavaScript -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const alertContainer = document.getElementById("alert-container");
+            if (alertContainer) {
+                const alerts = alertContainer.querySelectorAll(".alert-item");
+                alerts.forEach(alert => {
+                    setTimeout(() => {
+                        alert.style.opacity = '0';
+                        alert.style.transform = 'translateY(-20px) scale(0.95)';
+                        alert.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                        setTimeout(() => {
+                            alert.remove();
+                        }, 400);
+                    }, 4000);
+                });
+            }
+        });
+    </script>
+    
+    {% block scripts %}
+    {% endblock %}
+</body>
+</html>

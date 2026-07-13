@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}AuraFinance - Sign In{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="glass-panel auth-container fade-in-up">
+        <div class="auth-header">
+            <h1>Welcome Back</h1>
+            <p>Access your personal finance command center</p>
+        </div>
+        
+        {% if form.non_field_errors %}
+            {% for error in form.non_field_errors %}
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 12px; margin-bottom: 20px; color: var(--rose); font-size: 14px; text-align: center;">
+                    {{ error }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" novalidate>
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}
+                        <p style="font-size: 12px; color: var(--rose); margin-top: 4px; font-weight: 500;">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px; padding: 14px; font-size: 16px;">Sign In</button>
+        </form>
+
+        <div class="auth-footer">
+            Don't have an account yet? <a href="{% url 'signup' %}">Create one here</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

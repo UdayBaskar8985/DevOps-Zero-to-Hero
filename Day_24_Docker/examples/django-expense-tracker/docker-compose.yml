@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: expense_tracker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d expense_tracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    command: gunicorn expense_tracker.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    volumes:
+      - .:/app
+    ports:
+      - "8001:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-key-for-expense-tracker-development-only-12345
+      - DB_NAME=expense_tracker
+      - DB_USER=postgres
+      - DB_PASSWORD=postgrespassword
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

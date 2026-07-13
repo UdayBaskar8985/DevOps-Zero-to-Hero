@@ -1,0 +1,13 @@
+.git
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+db.sqlite3
+.dockerignore
+Dockerfile
+docker-compose.yml
+node_modules
+.wrangler

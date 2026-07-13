@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}AuraFinance - Create Account{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="glass-panel auth-container fade-in-up">
+        <div class="auth-header">
+            <h1>Create Account</h1>
+            <p>Start tracking your expenses elegantly</p>
+        </div>
+        
+        {% if form.non_field_errors %}
+            {% for error in form.non_field_errors %}
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 12px; margin-bottom: 20px; color: var(--rose); font-size: 14px; text-align: center;">
+                    {{ error }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" novalidate>
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text and "password" not in field.name %}
+                        <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">{{ field.help_text }}</p>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <p style="font-size: 12px; color: var(--rose); margin-top: 4px; font-weight: 500;">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px; padding: 14px; font-size: 16px;">Create Account</button>
+        </form>
+
+        <div class="auth-footer">
+            Already have an account? <a href="{% url 'login' %}">Sign in here</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

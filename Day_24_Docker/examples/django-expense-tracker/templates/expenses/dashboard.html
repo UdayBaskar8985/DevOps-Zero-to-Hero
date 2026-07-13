@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AuraFinance - Financial Dashboard{% endblock %}
+
+{% block content %}
+<div class="fade-in-up">
+    <!-- Dashboard Heading -->
+    <div class="panel-header" style="margin-bottom: 24px;">
+        <div>
+            <h2>Dashboard</h2>
+            <p style="color: var(--text-secondary); margin-top: 4px;">Financial breakdown for <strong>{{ current_month }}</strong></p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <a href="{% url 'income_create' %}" class="btn btn-secondary">+ Add Income</a>
+            <a href="{% url 'expense_create' %}" class="btn btn-primary">+ Add Expense</a>
+        </div>
+    </div>
+
+    <!-- Stats Summary Cards -->
+    <div class="dashboard-grid">
+        <!-- Monthly Income -->
+        <div class="glass-panel stat-card income">
+            <p class="stat-title">Income This Month</p>
+            <p class="stat-value text-emerald">${{ total_income|floatformat:2 }}</p>
+            <p class="stat-sub">Current monthly earnings</p>
+        </div>
+        
+        <!-- Monthly Expenses -->
+        <div class="glass-panel stat-card expense">
+            <p class="stat-title">Expenses This Month</p>
+            <p class="stat-value text-rose">${{ total_expense|floatformat:2 }}</p>
+            <p class="stat-sub">Current monthly spending</p>
+        </div>
+
+        <!-- Net Savings -->
+        <div class="glass-panel stat-card savings">
+            <p class="stat-title">Net Savings</p>
+            <p class="stat-value {% if net_savings >= 0 %}text-emerald{% else %}text-rose{% endif %}">
+                {% if net_savings < 0 %}-{% endif %}${{ abs_net_savings|floatformat:2 }}
+            </p>
+            <p class="stat-sub">Remaining savings balance</p>
+        </div>
+
+        <!-- Savings Rate -->
+        <div class="glass-panel stat-card rate">
+            <p class="stat-title">Savings Rate</p>
+            <p class="stat-value text-amber">{{ savings_rate }}%</p>
+            <p class="stat-sub">Percent of income saved</p>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-grid">
+        <!-- Spending Trend (Line) -->
+        <div class="glass-panel chart-card">
+            <h3>Monthly Spending Trend</h3>
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Category Breakdown (Donut) -->
+        <div class="glass-panel chart-card">
+            <h3>Expenses by Category</h3>
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lower Section: Recent Transactions & Active Budgets -->
+    <div class="charts-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 0;">
+        <!-- Recent Transactions -->
+        <div class="glass-panel list-panel">
+            <div class="panel-header" style="margin-bottom: 8px;">
+                <h3>Recent Transactions</h3>
+                <a href="{% url 'expense_list' %}" class="btn btn-secondary btn-sm">View All</a>
+            </div>
+            <div class="table-responsive">
+                {% if recent_transactions %}
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Category</th>
+                                <th>Details</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in recent_transactions %}
+                                <tr>
+                                    <td>{{ item.date|date:"M d, Y" }}</td>
+                                    <td>{{ item.category.icon }} {{ item.category.name }}</td>
+                                    <td style="color: var(--text-secondary);">{{ item.description|default:"-" }}</td>
+                                    <td>
+                                        {% if item.category.type == 'EXPENSE' %}
+                                            <span class="badge badge-expense">-${{ item.amount }}</span>
+                                        {% else %}
+                                            <span class="badge badge-income">+${{ item.amount }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p style="color: var(--text-secondary); text-align: center; padding: 32px 0;">No transactions recorded this month.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Active Budget Progress -->
+        <div class="glass-panel list-panel">
+            <div class="panel-header" style="margin-bottom: 8px;">
+                <h3>Budget Limits</h3>
+                <a href="{% url 'budget_list' %}" class="btn btn-secondary btn-sm">Manage</a>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                {% if budget_progress %}
+                    {% for item in budget_progress %}
+                        <div class="progress-wrapper">
+                            <div class="progress-info">
+                                <span>{{ item.budget.category.icon }} <strong>{{ item.budget.category.name }}</strong></span>
+                                <span>${{ item.spent|floatformat:2 }} / ${{ item.budget.amount|floatformat:2 }}</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill {% if item.exceeded %}danger{% elif item.warning %}warning{% endif %}" style="width: {{ item.percent }}%;"></div>
+                            </div>
+                            {% if item.exceeded %}
+                                <p style="font-size: 11px; color: var(--rose); margin-top: 4px; font-weight: 500;">🚨 Category budget exceeded!</p>
+                            {% elif item.warning %}
+                                <p style="font-size: 11px; color: var(--amber); margin-top: 4px; font-weight: 500;">⚠️ Budget warning: {{ item.percent }}% spent</p>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: var(--text-secondary); text-align: center; padding: 32px 0;">No category budgets set for this month.</p>
+                    <div style="text-align: center;">
+                        <a href="{% url 'budget_create' %}" class="btn btn-primary btn-sm">Setup First Budget</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Inject Django template values into JavaScript securely
+    const catLabels = {{ cat_labels|safe }};
+    const catValues = {{ cat_values|safe }};
+    const trendLabels = {{ trend_labels|safe }};
+    const trendValues = {{ trend_values|safe }};
+</script>
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}
